@@ -1,15 +1,7 @@
-export async function createTrip(prompt){
+import axios from "axios";
 
-  const res = await fetch(
-    "http://localhost:4000/api/trip/from-prompt",
-    {
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({prompt})
-    }
-  )
+const API = axios.create({
+  baseURL: "http://localhost:4000"
+});
 
-  return res.json()
-}
+export default API;

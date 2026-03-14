@@ -1,23 +1,55 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {useState} from "react"
 
-import Home from "./pages/Home";
-import Trip from "./pages/Trip";
+import Navbar from "./components/Navbar"
+import Hero from "./components/hero"
+import PromptPlanner from "./components/PromptPlanner";
+import Itinerary from "./components/Itinerary"
 
-import "./App.css";
+import "bootstrap/dist/css/bootstrap.min.css"
+import "./App.css"
 
-function App() {
-  return (
-    <BrowserRouter>
-      <div className="app-container">
+function App(){
 
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/trip" element={<Trip />} />
-        </Routes>
+const [trip,setTrip] = useState(null)
+const [loading,setLoading] = useState(false)
 
-      </div>
-    </BrowserRouter>
-  );
+return(
+
+<div>
+
+<Navbar/>
+
+<Hero/>
+
+<div className="container container-main">
+
+<div className="row justify-content-center">
+
+<div className="col-md-6">
+
+<PromptPlanner
+setTrip={setTrip}
+setLoading={setLoading}
+/>
+
+</div>
+
+</div>
+
+{loading && (
+<div className="text-center mt-4">
+Generating itinerary...
+</div>
+)}
+
+<Itinerary trip={trip}/>
+
+</div>
+
+</div>
+
+)
+
 }
 
-export default App;
+export default App

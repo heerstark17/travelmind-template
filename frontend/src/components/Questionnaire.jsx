@@ -1,79 +1,77 @@
-import { useState } from "react"
+import { useState } from "react";
+import API from "../api";
 
-export default function Questionnaire({onComplete}){
+export default function Questionnaire({ setTrip, setLoading }) {
 
-  const [answers,setAnswers] = useState({
-    budget:"",
-    travelStyle:"",
-    food:"",
-  })
+  const [form, setForm] = useState({
+    destination: "",
+    duration: "",
+    budget: "Medium",
+    travel_style: "Cultural"
+  });
 
-  function select(key,value){
+  const generate = async () => {
 
-    setAnswers({
-      ...answers,
-      [key]:value
-    })
-  }
+    try {
 
-  function submit(){
+      setLoading(true);
 
-    const refinedPrompt = `
-    ${answers.travelStyle} trip,
-    ${answers.budget} budget,
-    food preference: ${answers.food}
-    `
+      const res = await API.post("/itinerary", form);
 
-    onComplete(refinedPrompt)
-  }
+      setTrip({ itinerary: res.data }); // normalize structure
 
-  return(
+    } catch (err) {
 
-    <div className="card">
+      console.error(err);
+      alert("Itinerary API failed");
 
-      <h2 className="title">Trip Preferences</h2>
+    }
 
-      <h4>Budget</h4>
+    setLoading(false);
+  };
 
-      {["budget","mid","luxury"].map(v=>(
-        <div
-          key={v}
-          className="option"
-          onClick={()=>select("budget",v)}
-        >
-          {v}
-        </div>
-      ))}
+  return (
+    <div className="planner-card">
 
-      <h4>Travel Style</h4>
+      <h4>📋 Plan with Questionnaire</h4>
 
-      {["culture","nature","nightlife"].map(v=>(
-        <div
-          key={v}
-          className="option"
-          onClick={()=>select("travelStyle",v)}
-        >
-          {v}
-        </div>
-      ))}
+      <input
+        className="form-control mb-2"
+        placeholder="Destination"
+        onChange={(e) => setForm({ ...form, destination: e.target.value })}
+      />
 
-      <h4>Food Preference</h4>
+      <input
+        className="form-control mb-2"
+        placeholder="Duration (days)"
+        onChange={(e) => setForm({ ...form, duration: e.target.value })}
+      />
 
-      {["street food","fine dining","local cuisine"].map(v=>(
-        <div
-          key={v}
-          className="option"
-          onClick={()=>select("food",v)}
-        >
-          {v}
-        </div>
-      ))}
+      <select
+        className="form-control mb-2"
+        onChange={(e) => setForm({ ...form, budget: e.target.value })}
+      >
+        <option>Low</option>
+        <option>Medium</option>
+        <option>High</option>
+      </select>
 
-      <button className="button" onClick={submit}>
-        Continue
+      <select
+        className="form-control mb-3"
+        onChange={(e) => setForm({ ...form, travel_style: e.target.value })}
+      >
+        <option>Cultural</option>
+        <option>Adventure</option>
+        <option>Relaxation</option>
+      </select>
+
+      <button
+        className="btn btn-success w-100"
+        onClick={generate}
+      >
+        Generate Itinerary
       </button>
 
     </div>
-
-  )
+  );
 }

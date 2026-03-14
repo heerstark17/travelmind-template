@@ -1,32 +1,53 @@
-export default function Itinerary({ data }) {
+import { useState } from "react"
+import API from "../api"
 
-  const itinerary = data.itinerary || {};
+export default function PlannerPanel({setTrip,setLoading}){
 
-  return (
-    <div>
+const [prompt,setPrompt] = useState("")
 
-      <h2>{data.city} Trip</h2>
+const generate = async()=>{
 
-      <h3>Hotel Suggestions</h3>
+try{
 
-      {itinerary.hotelSuggestions?.map((hotel,i)=>(
-        <p key={i}>{hotel}</p>
-      ))}
+setLoading(true)
 
-      <h3>Daily Plan</h3>
+const res = await API.post("/prompt",{prompt})
 
-      {itinerary.days?.map(day=>(
-        <div key={day.day}>
+setTrip(res.data)
 
-          <h4>Day {day.day}</h4>
+}catch(err){
 
-          {day.activities.map((a,i)=>(
-            <p key={i}>• {a}</p>
-          ))}
+console.error(err)
 
-        </div>
-      ))}
+}
 
-    </div>
-  );
+setLoading(false)
+
+}
+
+return(
+
+<div className="glass-card">
+
+<h5 className="mb-3">
+Plan with Prompt
+</h5>
+
+<textarea
+className="form-control mb-3"
+placeholder="Example: 3 day cultural trip to Udaipur"
+onChange={(e)=>setPrompt(e.target.value)}
+/>
+
+<button
+className="btn btn-light w-100"
+onClick={generate}
+>
+Generate Itinerary
+</button>
+
+</div>
+
+)
+
 }
