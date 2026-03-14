@@ -5,6 +5,7 @@ export default function Navbar({ userName }) {
 
   const logout = () => {
     localStorage.removeItem("user");
+    document.cookie = "tripsera_user=; path=/; max-age=0";
     navigate("/");
   };
 
@@ -12,7 +13,8 @@ export default function Navbar({ userName }) {
     <nav className="travel-nav">
       <div className="nav-shell">
         <button className="brand" onClick={() => navigate("/planner")} type="button">
-          TravelMind
+          <span className="brand-logo">TE</span>
+          Trips-era
         </button>
         <div className="nav-actions">
           {userName && <span className="user-pill">Hello, {userName}</span>}

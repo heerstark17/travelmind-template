@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, signup } from "../api";
 
@@ -18,6 +18,12 @@ export default function Login() {
     return raw ? JSON.parse(raw) : null;
   }, []);
 
+  useEffect(() => {
+    if (storedUser?.user?._id) {
+      navigate("/planner");
+    }
+  }, [storedUser, navigate]);
+
   const handleChange = (key) => (event) => {
     setForm((prev) => ({ ...prev, [key]: event.target.value }));
   };
@@ -35,11 +41,19 @@ export default function Login() {
       }
 
       if (mode === "signup") {
-        await signup({
+        const auth = await signup({
           name: form.name,
           email: form.email,
           password: form.password
         });
+        if (auth?.token) {
+          localStorage.setItem("user", JSON.stringify(auth));
+          document.cookie = `tripsera_user=${encodeURIComponent(
+            JSON.stringify(auth)
+          )}; path=/; max-age=2592000`;
+          navigate("/planner");
+          return;
+        }
       }
 
       const auth = await login({
@@ -48,6 +62,9 @@ export default function Login() {
       });
 
       localStorage.setItem("user", JSON.stringify(auth));
+      document.cookie = `tripsera_user=${encodeURIComponent(
+        JSON.stringify(auth)
+      )}; path=/; max-age=2592000`;
       navigate("/planner");
     } catch (err) {
       setError(err?.response?.data?.error || "Authentication failed");
@@ -62,15 +79,15 @@ export default function Login() {
 
   const logout = () => {
     localStorage.removeItem("user");
+    document.cookie = "tripsera_user=; path=/; max-age=0";
     window.location.reload();
   };
-
 
   return (
     <div className="login-page">
       <div className="login-card">
         <div className="brand-lockup">
-          <span className="brand-tag">TravelMind</span>
+          <span className="brand-tag">Trips-era</span>
           <h1>Plan like a local, travel like a curator.</h1>
           <p>
             AI-assisted itineraries with real distances, hidden gems, and

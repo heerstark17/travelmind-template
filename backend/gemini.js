@@ -77,14 +77,22 @@ const itinerarySchema = {
 
 async function generateItinerary(data) {
   const resolved = resolveCity(data.destination);
-
-  if (!resolved) {
-    throw new Error("City not found in catalog");
+  const cityData = resolved?.data || { attractions: [], hotels: [], restaurants: [] };
+  const cityName = resolved?.name;
+  if (cityName) {
+    data.destination = cityName;
   }
 
-  const cityData = resolved.data;
-  const cityName = resolved.name;
-  data.destination = cityName;
+  const normalizeBudget = (budget) => String(budget || "").toLowerCase();
+  const budgetLevel = normalizeBudget(data.budget);
+  const durationDays = Number.parseInt(String(data.duration || "0"), 10) || 0;
+  let perDay = 0;
+
+  if (budgetLevel.includes("low")) perDay = 2000;
+  if (budgetLevel.includes("medium")) perDay = 4000;
+  if (budgetLevel.includes("high")) perDay = 6000;
+
+  const estimatedTotalTarget = perDay && durationDays ? perDay * durationDays : 0;
 
   // 2. Initialize the model with our strict configuration
   const model = genAI.getGenerativeModel({
@@ -105,15 +113,17 @@ Budget Level: ${data.budget}
 Travel Style: ${data.travel_style}
 Travel Collaboration: ${data.collaboration || "Not specified"}
 Travel Companion: ${data.travel_companion || "Not specified"}
+Budget per day (guide): ${perDay ? `INR ${perDay}` : "Not specified"}
+Target total budget (guide): ${estimatedTotalTarget ? `INR ${estimatedTotalTarget}` : "Not specified"}
 
-Use these attractions as main places:
-${JSON.stringify(cityData.attractions)}
+${resolved ? "Use these attractions as main places:" : "No catalog data available. Choose top attractions based on your knowledge."}
+${resolved ? JSON.stringify(cityData.attractions) : ""}
 
-Use these hotels:
-${JSON.stringify(cityData.hotels)}
+${resolved ? "Use these hotels:" : "Suggest suitable hotels based on the destination."}
+${resolved ? JSON.stringify(cityData.hotels) : ""}
 
-Use these restaurants for food recommendations:
-${JSON.stringify(cityData.restaurants || [])}
+${resolved ? "Use these restaurants for food recommendations:" : "Suggest good local restaurants based on the destination."}
+${resolved ? JSON.stringify(cityData.restaurants || []) : ""}
 
 Requirements:
 1. Plan each day with distinct morning, afternoon, and evening activities.
@@ -127,8 +137,14 @@ Requirements:
 9. Calculate the estimated total trip budget in INR.
 `;
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  let text = "";
+  try {
+    const result = await model.generateContent(prompt);
+    text = result.response.text();
+  } catch (err) {
+    const reason = err?.message || "Gemini request failed";
+    throw new Error(`Gemini request failed: ${reason}`);
+  }
 
   // 4. Safely parse the guaranteed JSON
   try {

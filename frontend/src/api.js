@@ -46,4 +46,24 @@ export function fetchCatalogCity(city) {
   return API.get(`/catalog/${encodeURIComponent(city)}`).then((res) => res.data);
 }
 
+export function createShare(payload) {
+  return API.post("/share", payload).then((res) => res.data);
+}
+
+export function fetchShare(id) {
+  return API.get(`/share/${id}`).then((res) => res.data);
+}
+
+export function listShares(userId) {
+  return API.get(`/share/user/${userId}`).then((res) => res.data);
+}
+
+export function addCollaborator(id, email) {
+  return API.post(`/share/${id}/collaborators`, { email }).then((res) => res.data);
+}
+
+export function voteShare(id, userId, value) {
+  return API.post(`/share/${id}/vote`, { userId, value }).then((res) => res.data);
+}
+
 export default API;

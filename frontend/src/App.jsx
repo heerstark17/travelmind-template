@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
 
 import Login from "./pages/login";
 import Planner from "./pages/Planner";
@@ -9,6 +10,26 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
 function App() {
+  useEffect(() => {
+    const existing = localStorage.getItem("user");
+    if (existing) return;
+
+    const match = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("tripsera_user="));
+
+    if (!match) return;
+
+    try {
+      const value = decodeURIComponent(match.split("=")[1] || "");
+      if (value) {
+        localStorage.setItem("user", value);
+      }
+    } catch {
+      // ignore malformed cookie
+    }
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

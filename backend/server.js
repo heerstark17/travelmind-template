@@ -14,6 +14,7 @@ const generateItinerary = require("./gemini");
 const authRoutes = require("./routes/auth");
 const wishlistRoutes = require("./routes/wishlist");
 const chatRoutes = require("./routes/chat");
+const sharedRoutes = require("./routes/shared");
 
 const app = express();
 
@@ -63,6 +64,9 @@ app.use("/wishlist", wishlistRoutes);
 /* Chat history */
 app.use("/chat", chatRoutes);
 
+/* Shared itineraries */
+app.use("/share", sharedRoutes);
+
 /* ---------- Questionnaire Endpoint ---------- */
 
 app.get("/questions", (req, res) => {
@@ -95,10 +99,13 @@ app.post("/itinerary", async (req, res) => {
     const resolved = resolveCity(req.body?.destination);
 
     if (!resolved) {
-      return res.status(404).json({
-        error: "City not found in catalog",
-        suggestions: listCities()
+      const itinerary = await generateItinerary({
+        ...req.body,
+        destination: req.body?.destination
       });
+      itinerary.note = "City not found in catalog. Generated with Gemini.";
+      res.json(itinerary);
+      return;
     }
 
     const itinerary = await generateItinerary({
@@ -111,7 +118,8 @@ app.post("/itinerary", async (req, res) => {
   } catch (error) {
     console.error("Itinerary error:", error);
     res.status(500).json({
-      error: "Itinerary generation failed"
+      error: "Itinerary generation failed",
+      details: error?.message || "Unknown error"
     });
   }
 });
@@ -122,6 +130,8 @@ app.post("/prompt", async (req, res) => {
   const { prompt } = req.body;
 
   try {
+    const availableCities = listCities();
+
     // 3. Configure the model to force strict JSON output using the schema
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
@@ -134,6 +144,7 @@ app.post("/prompt", async (req, res) => {
     const extractionPrompt = `
 Extract travel planning parameters from the following user prompt.
 If the user does not specify a duration, budget, or travel style, leave those fields blank ("").
+If the user does not specify a destination city, leave "destination" blank.
 
 Prompt:
 "${prompt}"
@@ -166,7 +177,97 @@ Prompt:
       extracted.travel_companion = "Solo";
     }
 
-    const resolved = resolveCity(extracted.destination);
+    const suggestDestinations = (text) => {
+      const value = String(text || "").toLowerCase();
+
+      const matchers = [
+        {
+          keywords: ["mountain", "mountains", "hills", "snow", "trek", "hiking"],
+          options: ["Manali", "Shimla", "Rishikesh"]
+        },
+        {
+          keywords: ["beach", "coast", "sea", "island"],
+          options: ["Goa", "Kerala"]
+        },
+        {
+          keywords: ["heritage", "history", "palace", "fort", "culture"],
+          options: ["Jaipur", "Udaipur", "Delhi", "Agra"]
+        },
+        {
+          keywords: ["food", "cuisine", "street food"],
+          options: ["Delhi", "Mumbai", "Kolkata", "Hyderabad"]
+        },
+        {
+          keywords: ["spiritual", "temple", "ghat", "yoga"],
+          options: ["Varanasi", "Rishikesh"]
+        },
+        {
+          keywords: ["nature", "wildlife", "backwaters"],
+          options: ["Kerala", "Goa", "Rishikesh"]
+        }
+      ];
+
+      for (const group of matchers) {
+        if (group.keywords.some((keyword) => value.includes(keyword))) {
+          return group.options.filter((city) => availableCities.includes(city));
+        }
+      }
+
+      return availableCities.slice(0, 3);
+    };
+
+    if (!extracted.destination) {
+      const fallbackSchema = {
+        type: SchemaType.OBJECT,
+        properties: {
+          destination: { type: SchemaType.STRING }
+        },
+        required: ["destination"]
+      };
+
+      const fallbackModel = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash",
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: fallbackSchema,
+        }
+      });
+
+      const fallbackPrompt = `
+You are a travel planner. User's prompt is: "${prompt}"
+Pick the single best Indian city matching the user's semantics.
+Return JSON with:
+1) "destination": city name
+`;
+
+      const fallbackResult = await fallbackModel.generateContent(fallbackPrompt);
+      const fallbackText = fallbackResult.response.text();
+      let fallback;
+
+      try {
+        fallback = JSON.parse(fallbackText);
+      } catch (err) {
+        console.error("Fallback parse error:", fallbackText);
+        return res.status(500).json({ error: "Prompt processing failed" });
+      }
+
+      extracted.destination = fallback.destination;
+    }
+
+    let resolved = resolveCity(extracted.destination);
+
+    if (!resolved) {
+      const itinerary = await generateItinerary({
+        ...extracted,
+        destination: extracted.destination
+      });
+
+      return res.json({
+        extracted_parameters: extracted,
+        itinerary,
+        note: "City not found in catalog. Generated with Gemini."
+      });
+    }
 
     if (!resolved) {
       return res.status(404).json({
@@ -186,7 +287,8 @@ Prompt:
     res.json({
       extracted_parameters: {
         ...extracted,
-        destination: resolved.name
+        destination: resolved.name,
+        destination_options: extracted.destination_options || []
       },
       itinerary
     });
@@ -194,7 +296,8 @@ Prompt:
   } catch (error) {
     console.error("Prompt processing error:", error);
     res.status(500).json({
-      error: "Prompt processing failed"
+      error: "Prompt processing failed",
+      details: error?.message || "Unknown error"
     });
   }
 });

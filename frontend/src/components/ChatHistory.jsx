@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { fetchChatHistory } from "../api";
 
 export default function ChatHistory({ userId }) {
   const [items, setItems] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function load() {
@@ -26,7 +28,18 @@ export default function ChatHistory({ userId }) {
       ) : (
         <div className="history-stack">
           {items.map((item) => (
-            <div key={item._id} className="history-card">
+            <button
+              key={item._id}
+              type="button"
+              className="history-card clickable-card"
+              onClick={() => {
+                const itinerary = item.response;
+                if (!itinerary) return;
+                sessionStorage.setItem("lastTrip", JSON.stringify(itinerary));
+                sessionStorage.setItem("lastInputs", JSON.stringify(item.query || {}));
+                navigate("/itinerary", { state: { trip: itinerary, meta: item.query } });
+              }}
+            >
               <div className="history-meta">
                 <span>{new Date(item.date).toLocaleString()}</span>
               </div>
@@ -39,7 +52,7 @@ export default function ChatHistory({ userId }) {
                   {item.response?.travel_style || "Unknown style"}
                 </div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}

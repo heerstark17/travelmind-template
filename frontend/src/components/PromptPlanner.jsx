@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { generateFromPrompt, saveChatHistory } from "../api";
 
-export default function PromptPlanner({ onTripReady, userId }) {
+export default function PromptPlanner({ onTripReady, onMultiTrips, userId }) {
   const [prompt, setPrompt] = useState("");
   const [collaboration, setCollaboration] = useState("Solo planning");
   const [companion, setCompanion] = useState("Solo");
@@ -10,19 +10,38 @@ export default function PromptPlanner({ onTripReady, userId }) {
   const [checkoutDate, setCheckoutDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [semanticOptions, setSemanticOptions] = useState([]);
+  const [semanticBriefs, setSemanticBriefs] = useState([]);
 
-  const generate = async () => {
-    if (!prompt.trim()) {
+  const runPrompt = async (basePrompt) => {
+    if (!basePrompt.trim()) {
       setError("Add a quick prompt to get started.");
       return;
     }
 
     setError("");
+    setSemanticOptions([]);
+    setSemanticBriefs([]);
     setLoading(true);
 
     try {
-      const enrichedPrompt = `${prompt}\nTravel collaboration: ${collaboration}\nTravel companion: ${companion}`;
+      const enrichedPrompt = `${basePrompt}\nTravel collaboration: ${collaboration}\nTravel companion: ${companion}`;
       const data = await generateFromPrompt(enrichedPrompt);
+      if (Array.isArray(data.itineraries) && data.itineraries.length > 0) {
+        onMultiTrips?.(data.itineraries, {
+          destination_options: data.semantic_suggestions || [],
+          prompt
+        });
+        return;
+      }
+
+      if (!data.itinerary && data.semantic_suggestions) {
+        setSemanticOptions(data.semantic_suggestions || []);
+        setSemanticBriefs(data.brief_itineraries || []);
+        setError(data.note || "");
+        return;
+      }
+
       onTripReady(data.itinerary, {
         ...data.extracted_parameters,
         collaboration,
@@ -40,10 +59,21 @@ export default function PromptPlanner({ onTripReady, userId }) {
         });
       }
     } catch (err) {
-      setError("Prompt planner failed. Try again.");
+      const suggestions = err?.response?.data?.semantic_suggestions || [];
+      if (suggestions.length > 0) {
+        setSemanticOptions(suggestions);
+        setSemanticBriefs(err?.response?.data?.brief_itineraries || []);
+        setError("We couldn't match a city. Pick one of these suggestions:");
+      } else {
+        setError("Prompt planner failed. Try again.");
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const generate = async () => {
+    await runPrompt(prompt);
   };
 
   return (
@@ -104,6 +134,16 @@ export default function PromptPlanner({ onTripReady, userId }) {
       </div>
 
       {error && <div className="form-error">{error}</div>}
+      {semanticOptions.length > 0 && (
+        <div className="semantic-grid">
+          {semanticOptions.map((city, index) => (
+            <div key={city} className="semantic-card">
+              <strong>{city}</strong>
+              <span>{semanticBriefs[index] || "Suggested itinerary preview"}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <button className="primary-btn" onClick={generate} disabled={loading}>
         {loading ? "Building itinerary..." : "Generate itinerary"}

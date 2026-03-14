@@ -2,7 +2,7 @@ export default function Hero() {
   return (
     <section className="hero">
       <div className="hero-copy">
-        <span className="hero-tag">TravelMind AI</span>
+        <span className="hero-tag">Trips-era AI</span>
         <h1>Itineraries that feel researched, not random.</h1>
         <p>
           Build day-by-day travel plans with routing logic, hidden gems, and

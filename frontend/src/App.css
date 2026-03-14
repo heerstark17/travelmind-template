@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&family=Rubik+Dirt&display=swap");
 
 :root {
   --ink: #0f1c1b;
@@ -58,11 +58,28 @@ body {
 .brand {
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--ink);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "Rubik Dirt", "Space Grotesk", sans-serif;
+}
+
+.brand-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: conic-gradient(from 120deg, #0f6b63, #c96a3d, #0f6b63);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 14px;
+  letter-spacing: 0;
+  box-shadow: 0 6px 14px rgba(15, 107, 99, 0.25);
 }
 
 .nav-actions {
@@ -105,6 +122,7 @@ body {
   font-size: 12px;
   color: var(--amber);
   font-weight: 600;
+  font-family: "Rubik Dirt", "Space Grotesk", sans-serif;
 }
 
 .hero-panel {
@@ -271,6 +289,7 @@ select:focus,
   border-radius: 20px;
   padding: 20px;
   border: 1px solid var(--stroke);
+  min-width: 0;
 }
 
 .timeline-header {
@@ -278,11 +297,13 @@ select:focus,
   justify-content: space-between;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .timeline-card h4 {
   margin: 0;
   font-size: 18px;
+  flex: 1 1 240px;
 }
 
 .activity-block {
@@ -327,7 +348,39 @@ select:focus,
   font-size: 12px;
   background: #fff;
   border: 1px solid var(--stroke);
+  cursor: pointer;
+  white-space: normal;
+  line-height: 1.3;
 }
+
+.timeline-header .badge {
+  flex: 1 1 260px;
+}
+
+.semantic-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.semantic-card {
+  text-align: left;
+  border-radius: 16px;
+  border: 1px solid var(--stroke);
+  background: #fff;
+  padding: 12px 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.semantic-card strong {
+  font-size: 14px;
+}
+
+.semantic-card span {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
 
 .gem {
   background: rgba(201, 106, 61, 0.1);
@@ -410,26 +463,17 @@ select:focus,
 
 .itinerary-grid {
   display: grid;
-  grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
 
-.itinerary-column {
-  display: grid;
-  gap: 18px;
-  min-width: 0;
-}
-
+.itinerary-column,
 .side-column {
   display: grid;
-  gap: 20px;
+  gap: 24px;
   align-content: start;
   min-width: 0;
-}
-
-.itinerary-grid .section-card {
-  margin-bottom: 0;
 }
 
 .section-card {
@@ -444,6 +488,7 @@ select:focus,
 .premium-card {
   background: linear-gradient(160deg, #ffffff 0%, #f6f1e9 100%);
   border: 1px solid rgba(215, 199, 179, 0.8);
+  position: relative;
 }
 
 .hotel-options {
@@ -558,6 +603,68 @@ select:focus,
   color: var(--ink-soft);
   margin-top: 4px;
 }
+
+.share-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.share-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.share-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.share-invite {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+}
+
+.share-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.timeline-viz,
+.budget-viz {
+  display: grid;
+  gap: 12px;
+}
+
+.timeline-viz-row,
+.budget-viz-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.timeline-bar,
+.budget-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--stroke);
+  overflow: hidden;
+}
+
+.timeline-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, rgba(15, 107, 99, 0.4), rgba(15, 107, 99, 0.9));
+}
+
+.budget-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(201, 106, 61, 0.4), rgba(201, 106, 61, 0.9));
+}
 .hotel-option {
   padding: 14px 16px;
   border-radius: 14px;
@@ -604,6 +711,7 @@ select:focus,
   inset: -40% 0 auto;
   height: 140px;
   background: radial-gradient(circle, rgba(201, 106, 61, 0.25), transparent 70%);
+  pointer-events: none;
 }
 
 .map-list {
@@ -626,6 +734,31 @@ select:focus,
   align-items: center;
   justify-content: center;
   text-decoration: none;
+}
+
+.section-card a,
+.section-card button {
+  position: relative;
+  z-index: 1;
+}
+
+.itinerary-hero .badge {
+  background: var(--mist);
+  color: var(--ink);
+}
+
+.itinerary-hero {
+  align-items: flex-start;
+}
+
+.itinerary-column,
+.side-column {
+  height: fit-content;
+}
+
+.travel-card strong,
+.travel-card span {
+  color: var(--ink);
 }
 
 .dashboard-hero {
@@ -786,6 +919,18 @@ select:focus,
   border-radius: 12px;
   border: 1px solid var(--stroke);
   background: #fff;
+  text-align: left;
+  width: 100%;
+}
+
+.clickable-card {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.clickable-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(15, 28, 27, 0.12);
 }
 
 .history-meta {

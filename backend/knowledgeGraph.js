@@ -14,7 +14,7 @@ options:["1","2","3","4","5"]
 budget:{
 question:"Budget",
 type:"dropdown",
-options:["Low","Medium","High"]
+options:["Low (INR 2000/day)","Medium (INR 4000/day)","High (INR 6000+/day)"]
 },
 
 travel_style:{

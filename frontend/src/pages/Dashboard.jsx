@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar";
 import ChatHistory from "../components/ChatHistory";
 import Wishlist from "../components/Wishlist";
-import { fetchChatHistory, fetchWishlist } from "../api";
+import { fetchChatHistory, fetchWishlist, listShares } from "../api";
 
 export default function Dashboard() {
   const storedUser = useMemo(() => {
@@ -13,7 +13,8 @@ export default function Dashboard() {
   const [stats, setStats] = useState({
     trips: 0,
     wishlist: 0,
-    lastTrip: null
+    lastTrip: null,
+    shares: 0
   });
 
   useEffect(() => {
@@ -22,9 +23,10 @@ export default function Dashboard() {
         return;
       }
 
-      const [history, wishlist] = await Promise.all([
+      const [history, wishlist, shares] = await Promise.all([
         fetchChatHistory(storedUser.user._id),
-        fetchWishlist(storedUser.user._id)
+        fetchWishlist(storedUser.user._id),
+        listShares(storedUser.user._id)
       ]);
 
       const lastTrip = history[0]?.response || null;
@@ -32,8 +34,10 @@ export default function Dashboard() {
       setStats({
         trips: history.length,
         wishlist: wishlist.length,
-        lastTrip
+        lastTrip,
+        shares: shares.length
       });
+
     }
 
     load();
@@ -63,6 +67,10 @@ export default function Dashboard() {
             <div className="stat-card">
               <span>Last destination</span>
               <strong>{stats.lastTrip?.destination || "None yet"}</strong>
+            </div>
+            <div className="stat-card">
+              <span>Shared itineraries</span>
+              <strong>{stats.shares}</strong>
             </div>
           </div>
         </section>
