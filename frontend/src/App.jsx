@@ -1,17 +1,22 @@
-import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import Home from "./pages/Home";
+import Trip from "./pages/Trip";
+
+import "./App.css";
 
 function App() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-blue-600">
-          TravelMind AI Planner
-        </h1>
-        <p className="mt-4 text-gray-600">
-          React + Tailwind frontend template is working
-        </p>
+    <BrowserRouter>
+      <div className="app-container">
+
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/trip" element={<Trip />} />
+        </Routes>
+
       </div>
-    </div>
+    </BrowserRouter>
   );
 }
 
