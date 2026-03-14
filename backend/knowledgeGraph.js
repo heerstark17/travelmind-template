@@ -23,6 +23,33 @@ type:"dropdown",
 options:["Cultural","Adventure","Nature","Food","Relaxation"]
 },
 
+preferred_hotel:{
+question:"Preferred hotel (optional)",
+type:"text"
+},
+
+checkin_date:{
+question:"Check-in date",
+type:"date"
+},
+
+checkout_date:{
+question:"Check-out date",
+type:"date"
+},
+
+collaboration:{
+question:"Travel collaboration",
+type:"dropdown",
+options:["Solo planning","Planning with friends","Family group","Team trip"]
+},
+
+travel_companion:{
+question:"Travel companion",
+type:"dropdown",
+options:["Solo","Partner","Friends","Family","Colleagues"]
+},
+
 accommodation:{
 question:"Accommodation",
 type:"dropdown",

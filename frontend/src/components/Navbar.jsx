@@ -1,31 +1,32 @@
-export default function Navbar(){
+import { useNavigate } from "react-router-dom";
 
-return(
+export default function Navbar({ userName }) {
+  const navigate = useNavigate();
 
-<nav className="navbar navbar-dark">
+  const logout = () => {
+    localStorage.removeItem("user");
+    navigate("/");
+  };
 
-<div className="container d-flex justify-content-between">
-
-<h4 className="fw-bold">
-TravelMind
-</h4>
-
-<div>
-
-<button className="btn btn-outline-light me-2">
-Login
-</button>
-
-<button className="btn btn-outline-light">
-Wishlist
-</button>
-
-</div>
-
-</div>
-
-</nav>
-
-)
-
+  return (
+    <nav className="travel-nav">
+      <div className="nav-shell">
+        <button className="brand" onClick={() => navigate("/planner")} type="button">
+          TravelMind
+        </button>
+        <div className="nav-actions">
+          {userName && <span className="user-pill">Hello, {userName}</span>}
+          <button className="ghost-btn" onClick={() => navigate("/planner")} type="button">
+            Planner
+          </button>
+          <button className="ghost-btn" onClick={() => navigate("/dashboard")} type="button">
+            Dashboard
+          </button>
+          <button className="ghost-btn" onClick={logout} type="button">
+            Log out
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
 }

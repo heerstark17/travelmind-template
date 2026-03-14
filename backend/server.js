@@ -8,6 +8,7 @@ const mongoose = require("mongoose");
 const { GoogleGenerativeAI, SchemaType } = require("@google/generative-ai");
 
 const questions = require("./knowledgeGraph");
+const { resolveCity, listCities, getNearbyCities } = require("./catalog");
 const generateItinerary = require("./gemini");
 
 const authRoutes = require("./routes/auth");
@@ -42,7 +43,11 @@ const extractionSchema = {
     destination: { type: SchemaType.STRING },
     duration: { type: SchemaType.STRING },
     budget: { type: SchemaType.STRING },
-    travel_style: { type: SchemaType.STRING }
+    travel_style: { type: SchemaType.STRING },
+    collaboration: { type: SchemaType.STRING },
+    travel_companion: { type: SchemaType.STRING },
+    checkin_date: { type: SchemaType.STRING },
+    checkout_date: { type: SchemaType.STRING }
   },
   required: ["destination", "duration", "budget", "travel_style"]
 };
@@ -64,11 +69,44 @@ app.get("/questions", (req, res) => {
   res.json(questions);
 });
 
+/* ---------- Catalog Lookup ---------- */
+
+app.get("/catalog/:city", (req, res) => {
+  const resolved = resolveCity(req.params.city);
+
+  if (!resolved) {
+    return res.status(404).json({
+      error: "City not found in catalog",
+      suggestions: listCities()
+    });
+  }
+
+  return res.json({
+    city: resolved.name,
+    data: resolved.data,
+    corrected: Boolean(resolved.corrected)
+  });
+});
+
 /* ---------- Structured Itinerary Endpoint ---------- */
 
 app.post("/itinerary", async (req, res) => {
   try {
-    const itinerary = await generateItinerary(req.body);
+    const resolved = resolveCity(req.body?.destination);
+
+    if (!resolved) {
+      return res.status(404).json({
+        error: "City not found in catalog",
+        suggestions: listCities()
+      });
+    }
+
+    const itinerary = await generateItinerary({
+      ...req.body,
+      destination: resolved.name
+    });
+
+    itinerary.nearby_cities = getNearbyCities(itinerary.destination, 20);
     res.json(itinerary);
   } catch (error) {
     console.error("Itinerary error:", error);
@@ -120,11 +158,36 @@ Prompt:
       extracted.travel_style = "Cultural";
     }
 
+    if (!extracted.collaboration) {
+      extracted.collaboration = "Solo planning";
+    }
+
+    if (!extracted.travel_companion) {
+      extracted.travel_companion = "Solo";
+    }
+
+    const resolved = resolveCity(extracted.destination);
+
+    if (!resolved) {
+      return res.status(404).json({
+        error: "City not found in catalog",
+        suggestions: listCities()
+      });
+    }
+
     // Pass the extracted (and defaulted) params to your new, hardened itinerary generator
-    const itinerary = await generateItinerary(extracted);
+    const itinerary = await generateItinerary({
+      ...extracted,
+      destination: resolved.name
+    });
+
+    itinerary.nearby_cities = getNearbyCities(itinerary.destination, 20);
 
     res.json({
-      extracted_parameters: extracted,
+      extracted_parameters: {
+        ...extracted,
+        destination: resolved.name
+      },
       itinerary
     });
 

@@ -1,5 +1,5 @@
 const { GoogleGenerativeAI, SchemaType } = require("@google/generative-ai");
-const catalog = require("./catalog");
+const { resolveCity } = require("./catalog");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -76,11 +76,15 @@ const itinerarySchema = {
 };
 
 async function generateItinerary(data) {
-  const cityData = catalog[data.destination];
+  const resolved = resolveCity(data.destination);
 
-  if (!cityData) {
+  if (!resolved) {
     throw new Error("City not found in catalog");
   }
+
+  const cityData = resolved.data;
+  const cityName = resolved.name;
+  data.destination = cityName;
 
   // 2. Initialize the model with our strict configuration
   const model = genAI.getGenerativeModel({
@@ -99,12 +103,17 @@ Destination: ${data.destination}
 Duration: ${data.duration} days
 Budget Level: ${data.budget}
 Travel Style: ${data.travel_style}
+Travel Collaboration: ${data.collaboration || "Not specified"}
+Travel Companion: ${data.travel_companion || "Not specified"}
 
 Use these attractions as main places:
 ${JSON.stringify(cityData.attractions)}
 
 Use these hotels:
 ${JSON.stringify(cityData.hotels)}
+
+Use these restaurants for food recommendations:
+${JSON.stringify(cityData.restaurants || [])}
 
 Requirements:
 1. Plan each day with distinct morning, afternoon, and evening activities.
@@ -113,8 +122,9 @@ Requirements:
 4. Estimate realistic travel time between locations.
 5. Estimate the cost for each activity in INR.
 6. Suggest an appropriate hotel for each day from the provided list.
-7. Calculate the estimated total daily budget in INR.
-8. Calculate the estimated total trip budget in INR.
+7. Include at least one restaurant experience each day from the provided list.
+8. Calculate the estimated total daily budget in INR.
+9. Calculate the estimated total trip budget in INR.
 `;
 
   const result = await model.generateContent(prompt);

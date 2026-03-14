@@ -1,77 +1,107 @@
-import { useState } from "react";
-import API from "../api";
+import { useEffect, useState } from "react";
+import { fetchQuestions, generateItinerary, saveChatHistory } from "../api";
 
-export default function Questionnaire({ setTrip, setLoading }) {
+export default function Questionnaire({ onTripReady, userId }) {
+  const [questions, setQuestions] = useState({});
+  const [form, setForm] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const [form, setForm] = useState({
-    destination: "",
-    duration: "",
-    budget: "Medium",
-    travel_style: "Cultural"
-  });
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await fetchQuestions();
+        setQuestions(data);
 
-  const generate = async () => {
-
-    try {
-
-      setLoading(true);
-
-      const res = await API.post("/itinerary", form);
-
-      setTrip({ itinerary: res.data }); // normalize structure
-
-    } catch (err) {
-
-      console.error(err);
-      alert("Itinerary API failed");
-
+        const defaults = Object.entries(data).reduce((acc, [key, value]) => {
+          acc[key] = value.type === "dropdown" ? value.options[0] : "";
+          return acc;
+        }, {});
+        setForm(defaults);
+      } catch (err) {
+        setError("Unable to load the questionnaire.");
+      }
     }
 
-    setLoading(false);
+    load();
+  }, []);
+
+  const onChange = (key) => (event) => {
+    setForm((prev) => ({ ...prev, [key]: event.target.value }));
+  };
+
+  const generate = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      if (!form.destination || !form.duration) {
+        setError("Destination and duration are required.");
+        setLoading(false);
+        return;
+      }
+
+      const itinerary = await generateItinerary(form);
+      onTripReady(itinerary, form);
+
+      if (userId) {
+        await saveChatHistory({
+          userId,
+          query: { questionnaire: form },
+          response: itinerary
+        });
+      }
+    } catch (err) {
+      setError("Itinerary API failed. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="planner-card">
+    <div className="panel-card">
+      <div className="panel-header">
+        <div>
+          <h3>Guided questionnaire</h3>
+          <p>Dial in budget, duration, and style with structure.</p>
+        </div>
+      </div>
 
-      <h4>📋 Plan with Questionnaire</h4>
+      {Object.keys(questions).map((key) => {
+        const q = questions[key];
+        return (
+          <label key={key} className="field">
+            <span>{q.question}</span>
+            {q.type === "dropdown" ? (
+              <select value={form[key] || ""} onChange={onChange(key)}>
+                {q.options.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            ) : q.type === "date" ? (
+              <input
+                type="date"
+                value={form[key] || ""}
+                onChange={onChange(key)}
+              />
+            ) : (
+              <input
+                placeholder={q.question}
+                value={form[key] || ""}
+                onChange={onChange(key)}
+              />
+            )}
+          </label>
+        );
+      })}
 
-      <input
-        className="form-control mb-2"
-        placeholder="Destination"
-        onChange={(e) => setForm({ ...form, destination: e.target.value })}
-      />
+      {error && <div className="form-error">{error}</div>}
 
-      <input
-        className="form-control mb-2"
-        placeholder="Duration (days)"
-        onChange={(e) => setForm({ ...form, duration: e.target.value })}
-      />
-
-      <select
-        className="form-control mb-2"
-        onChange={(e) => setForm({ ...form, budget: e.target.value })}
-      >
-        <option>Low</option>
-        <option>Medium</option>
-        <option>High</option>
-      </select>
-
-      <select
-        className="form-control mb-3"
-        onChange={(e) => setForm({ ...form, travel_style: e.target.value })}
-      >
-        <option>Cultural</option>
-        <option>Adventure</option>
-        <option>Relaxation</option>
-      </select>
-
-      <button
-        className="btn btn-success w-100"
-        onClick={generate}
-      >
-        Generate Itinerary
+      <button className="primary-btn" onClick={generate} disabled={loading}>
+        {loading ? "Building itinerary..." : "Generate itinerary"}
       </button>
-
     </div>
   );
 }

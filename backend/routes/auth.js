@@ -5,10 +5,15 @@ const jwt = require("jsonwebtoken")
 const User = require("../models/User")
 
 const router = express.Router()
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 router.post("/signup", async(req,res)=>{
 
 const {name,email,password} = req.body
+
+if(!emailRegex.test(email || "")) {
+return res.status(400).json({error:"Invalid email"})
+}
 
 const hash = await bcrypt.hash(password,10)
 
@@ -25,6 +30,10 @@ res.json({message:"User created"})
 router.post("/login", async(req,res)=>{
 
 const {email,password} = req.body
+
+if(!emailRegex.test(email || "")) {
+return res.status(400).json({error:"Invalid email"})
+}
 
 const user = await User.findOne({email})
 
